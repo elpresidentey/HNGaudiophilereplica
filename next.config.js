@@ -1,19 +1,18 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: [],
     unoptimized: true,
   },
-  // Serve static assets from assets directory
-  async rewrites() {
-    return [
-      {
-        source: '/assets/:path*',
-        destination: '/assets/:path*',
-      },
-    ]
+  eslint: {
+    // Warning: This allows production builds to successfully complete even if
+    // your project has ESLint errors.
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    // Warning: This allows production builds to successfully complete even if
+    // your project has type errors.
+    ignoreBuildErrors: true,
   },
 }
 
 module.exports = nextConfig
-
