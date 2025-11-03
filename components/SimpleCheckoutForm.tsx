@@ -60,28 +60,35 @@ export default function SimpleCheckoutForm() {
       // Generate order ID
       const orderId = `ORD-${Date.now()}-${Math.random().toString(36).substring(2, 9).toUpperCase()}`
 
-      // Send email
-      const emailResponse = await fetch('/api/send-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: data.email,
-          name: data.name,
-          orderId,
-          items: cart,
-          total,
-          shipping,
-          subtotal,
-          tax,
-          address: data.address,
-          city: data.city,
-          country: data.country,
-          zipCode: data.zipCode,
-        }),
-      })
+      // Try to send email (but don't fail the order if it doesn't work)
+      let emailSent = false
+      try {
+        const emailResponse = await fetch('/api/send-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: data.email,
+            name: data.name,
+            orderId,
+            items: cart,
+            total,
+            shipping,
+            subtotal,
+            tax,
+            address: data.address,
+            city: data.city,
+            country: data.country,
+            zipCode: data.zipCode,
+          }),
+        })
 
-      if (!emailResponse.ok) {
-        throw new Error('Failed to send email')
+        if (emailResponse.ok) {
+          emailSent = true
+        } else {
+          console.warn('Email sending failed, but order will continue')
+        }
+      } catch (emailError) {
+        console.warn('Email service unavailable, but order will continue:', emailError)
       }
 
       // Store order data
@@ -100,6 +107,8 @@ export default function SimpleCheckoutForm() {
         country: data.country,
         zipCode: data.zipCode,
         paymentMethod: data.paymentMethod,
+        emailSent,
+        orderSaved: true,
         timestamp: Date.now(),
       }
 
@@ -107,7 +116,13 @@ export default function SimpleCheckoutForm() {
 
       // Clear cart and redirect
       clearCart()
-      router.push(`/checkout/confirmation?orderId=${orderId}`)
+      
+      // Add email status to URL if email failed
+      const confirmationUrl = emailSent 
+        ? `/checkout/confirmation?orderId=${orderId}`
+        : `/checkout/confirmation?orderId=${orderId}&emailFailed=true`
+      
+      router.push(confirmationUrl)
     } catch (err: any) {
       console.error('Order submission failed:', err)
       setError(err.message || 'An error occurred. Please try again.')
