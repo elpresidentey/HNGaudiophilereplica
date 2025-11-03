@@ -1,0 +1,635 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-cabin: 'Cabin', sans-serif;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Ensure all elements use Cabin font */
+*, *::before, *::after {
+  font-family: var(--font-cabin), 'Cabin', system-ui, sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-cabin), 'Cabin', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-cabin), 'Cabin', sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+h1 {
+  font-size: 56px;
+  line-height: 58px;
+  letter-spacing: 2px;
+}
+
+h2 {
+  font-size: 40px;
+  line-height: 44px;
+  letter-spacing: 1.5px;
+}
+
+h3 {
+  font-size: 32px;
+  line-height: 36px;
+  letter-spacing: 1.15px;
+}
+
+h4 {
+  font-size: 28px;
+  line-height: 38px;
+  letter-spacing: 2px;
+}
+
+h5 {
+  font-size: 24px;
+  line-height: 33px;
+  letter-spacing: 1.7px;
+}
+
+h6 {
+  font-size: 18px;
+  line-height: 24px;
+  letter-spacing: 1.3px;
+}
+
+@media (max-width: 768px) {
+  h1 {
+    font-size: 36px;
+    line-height: 40px;
+    letter-spacing: 1.3px;
+  }
+
+  h2 {
+    font-size: 28px;
+    line-height: 38px;
+    letter-spacing: 1px;
+  }
+
+  h3 {
+    font-size: 24px;
+    line-height: 33px;
+    letter-spacing: 0.86px;
+  }
+
+  h4 {
+    font-size: 20px;
+    line-height: 28px;
+    letter-spacing: 1.43px;
+  }
+}
+
+button {
+  font-family: var(--font-cabin), 'Cabin', sans-serif;
+  cursor: pointer;
+  border: none;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+input, textarea {
+  font-family: var(--font-cabin), 'Cabin', sans-serif;
+  outline: none;
+}
+
+input:focus, textarea:focus {
+  outline: 2px solid #D87D4A;
+  outline-offset: -2px;
+}
+
+/* Item Added Modal Animation */
+@keyframes shrink {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}
+
+@keyframes bounce-in {
+  0% {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.9);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-bounce-in {
+  animation: bounce-in 0.6s ease-out;
+}
+
+/* Hero Section Animations */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes pulse-slow {
+  0%, 100% {
+    opacity: 0.1;
+  }
+  50% {
+    opacity: 0.2;
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.8s ease-out forwards;
+  opacity: 0;
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 4s ease-in-out infinite;
+}
+
+.animation-delay-200 {
+  animation-delay: 0.2s;
+}
+
+.animation-delay-400 {
+  animation-delay: 0.4s;
+}
+
+.animation-delay-600 {
+  animation-delay: 0.6s;
+}
+
+/* Accessibility Utilities */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Focus visible styles for better keyboard navigation */
+.focus-visible:focus {
+  outline: 2px solid #D87D4A;
+  outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  input, textarea, select {
+    border: 2px solid;
+  }
+  
+  button {
+    border: 2px solid;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Enhanced focus indicators for form elements */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid #D87D4A;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(216, 125, 74, 0.1);
+}
+
+/* Error state styling */
+input[aria-invalid="true"],
+textarea[aria-invalid="true"],
+select[aria-invalid="true"] {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 1px #ef4444;
+}
+
+/* Success state styling */
+input.border-green-500,
+textarea.border-green-500,
+select.border-green-500 {
+  border-color: #10b981;
+  box-shadow: 0 0 0 1px #10b981;
+}
+
+/* Enhanced skip link styling */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 6px;
+  background: #D87D4A;
+  color: white;
+  padding: 8px 16px;
+  text-decoration: none;
+  border-radius: 4px;
+  z-index: 1000;
+  font-weight: bold;
+  transition: top 0.3s ease;
+}
+
+.skip-link:focus {
+  top: 6px;
+  outline: 2px solid white;
+  outline-offset: 2px;
+}
+
+/* Enhanced radio button focus styling */
+input[type="radio"]:focus-visible {
+  outline: 2px solid #D87D4A;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(216, 125, 74, 0.1);
+}
+
+/* Enhanced button focus styling */
+button:focus-visible {
+  outline: 2px solid #D87D4A;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(216, 125, 74, 0.1);
+}
+
+/* Fieldset focus styling for keyboard navigation */
+fieldset:focus-within {
+  box-shadow: 0 0 0 2px rgba(216, 125, 74, 0.1);
+  border-radius: 8px;
+}
+
+/* Enhanced error message styling */
+[role="alert"] {
+  border-left: 4px solid #ef4444;
+  padding-left: 12px;
+}
+
+/* Screen reader only content that becomes visible on focus */
+.sr-only-focusable:focus,
+.sr-only-focusable:active {
+  position: static;
+  width: auto;
+  height: auto;
+  padding: inherit;
+  margin: inherit;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+}
+
+/* High contrast mode enhancements */
+@media (prefers-contrast: high) {
+  .border-primary {
+    border-color: #000;
+    border-width: 2px;
+  }
+  
+  .bg-primary {
+    background-color: #000;
+    color: #fff;
+  }
+  
+  .text-primary {
+    color: #000;
+  }
+  
+  input:focus,
+  textarea:focus,
+  select:focus,
+  button:focus {
+    outline: 3px solid #000;
+    outline-offset: 2px;
+  }
+}
+
+/* Focus trap styling for modal-like behavior */
+.focus-trap {
+  position: relative;
+}
+
+.focus-trap::before,
+.focus-trap::after {
+  content: '';
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Improved loading state accessibility */
+[aria-busy="true"] {
+  cursor: wait;
+}
+
+[aria-busy="true"] * {
+  pointer-events: none;
+}
+
+/* Form validation animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+/* Enhanced validation state transitions */
+.transition-all {
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 200ms;
+}
+
+/* Validation icon animations */
+@keyframes checkmark {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-checkmark {
+  animation: checkmark 0.4s ease-out forwards;
+}
+
+/* Error shake animation */
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  10%, 30%, 50%, 70%, 90% {
+    transform: translateX(-2px);
+  }
+  20%, 40%, 60%, 80% {
+    transform: translateX(2px);
+  }
+}
+
+.animate-shake {
+  animation: shake 0.5s ease-in-out;
+}
+
+/* Progress indicator for validation */
+@keyframes progress {
+  0% {
+    transform: scaleX(0);
+  }
+  100% {
+    transform: scaleX(1);
+  }
+}
+
+.animate-progress {
+  animation: progress 0.3s ease-out forwards;
+  transform-origin: left;
+}
+
+/* Enhanced validation state animations */
+@keyframes validationSuccess {
+  0% {
+    transform: scale(0) rotate(0deg);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.3) rotate(180deg);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1) rotate(360deg);
+    opacity: 1;
+  }
+}
+
+.animate-validation-success {
+  animation: validationSuccess 0.5s ease-out forwards;
+}
+
+@keyframes validationError {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-validation-error {
+  animation: validationError 0.4s ease-out forwards;
+}
+
+@keyframes validationPulse {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+
+.animate-validation-pulse {
+  animation: validationPulse 1.5s ease-in-out infinite;
+}
+
+/* Field focus enhancement */
+@keyframes fieldFocus {
+  0% {
+    box-shadow: 0 0 0 0 rgba(216, 125, 74, 0.4);
+  }
+  100% {
+    box-shadow: 0 0 0 4px rgba(216, 125, 74, 0.1);
+  }
+}
+
+.animate-field-focus {
+  animation: fieldFocus 0.2s ease-out forwards;
+}
+
+/* Validation state border animations */
+.border-validation-success {
+  border-color: #10b981;
+  box-shadow: 0 0 0 1px #10b981, 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.border-validation-error {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 1px #ef4444, 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.border-validation-validating {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 1px #3b82f6, 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Enhanced form field states */
+.form-field-valid {
+  background-color: rgba(16, 185, 129, 0.05);
+  border-color: #10b981;
+  transition: all 0.3s ease;
+}
+
+.form-field-invalid {
+  background-color: rgba(239, 68, 68, 0.05);
+  border-color: #ef4444;
+  transition: all 0.3s ease;
+}
+
+.form-field-validating {
+  background-color: rgba(59, 130, 246, 0.05);
+  border-color: #3b82f6;
+  transition: all 0.3s ease;
+}
+
+/* Real-time validation feedback */
+@keyframes slideInFromTop {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-in-top {
+  animation: slideInFromTop 0.3s ease-out forwards;
+}
+
+/* Validation icon container animations */
+.validation-icon-container {
+  transition: all 0.2s ease;
+}
+
+.validation-icon-container.success {
+  color: #10b981;
+}
+
+.validation-icon-container.error {
+  color: #ef4444;
+}
+
+.validation-icon-container.validating {
+  color: #3b82f6;
+}
+
+/* Enhanced accessibility for validation states */
+@media (prefers-reduced-motion: reduce) {
+  .animate-validation-success,
+  .animate-validation-error,
+  .animate-validation-pulse,
+  .animate-field-focus,
+  .animate-slide-in-top {
+    animation: none;
+  }
+  
+  .form-field-valid,
+  .form-field-invalid,
+  .form-field-validating {
+    transition: none;
+  }
+}
+
+/* High contrast mode validation states */
+@media (prefers-contrast: high) {
+  .form-field-valid {
+    background-color: transparent;
+    border: 2px solid #000;
+  }
+  
+  .form-field-invalid {
+    background-color: transparent;
+    border: 2px solid #000;
+  }
+  
+  .form-field-validating {
+    background-color: transparent;
+    border: 2px solid #000;
+  }
+  
+  .validation-icon-container.success,
+  .validation-icon-container.error,
+  .validation-icon-container.validating {
+    color: #000;
+  }
+}
+
