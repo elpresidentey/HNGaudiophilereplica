@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -35,7 +35,7 @@ interface OrderData {
   timestamp: number
 }
 
-export default function ConfirmationPage() {
+function ConfirmationContent() {
   const searchParams = useSearchParams()
   const orderId = searchParams.get('orderId')
   const [orderData, setOrderData] = useState<OrderData | null>(null)
@@ -321,5 +321,32 @@ export default function ConfirmationPage() {
       </div>
       <Footer />
     </main>
+  )
+}
+
+// Loading component for Suspense fallback
+function ConfirmationLoading() {
+  return (
+    <main>
+      <Header />
+      <div className="container mx-auto px-6 py-12">
+        <div className="text-center">
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-200 rounded w-64 mx-auto mb-4"></div>
+            <div className="h-4 bg-gray-200 rounded w-48 mx-auto"></div>
+          </div>
+        </div>
+      </div>
+      <Footer />
+    </main>
+  )
+}
+
+// Main page component with Suspense boundary
+export default function ConfirmationPage() {
+  return (
+    <Suspense fallback={<ConfirmationLoading />}>
+      <ConfirmationContent />
+    </Suspense>
   )
 }

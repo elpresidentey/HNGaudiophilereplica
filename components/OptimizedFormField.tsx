@@ -95,7 +95,7 @@ const OptimizedFormField = memo(function OptimizedFormField({
     if (onValidation) {
       onValidation(id, e.target.value)
     }
-  }, [register.onChange, onValidation, id])
+  }, [register, onValidation, id])
 
   // Optimized blur handler
   const handleBlur = useCallback((e: React.FocusEvent<HTMLInputElement>) => {
@@ -103,7 +103,7 @@ const OptimizedFormField = memo(function OptimizedFormField({
     if (onBlur) {
       onBlur(id)
     }
-  }, [register.onBlur, onBlur, id])
+  }, [register, onBlur, id])
 
   return (
     <div className={className}>

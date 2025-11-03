@@ -147,11 +147,12 @@ export class OptimizedStorageManager {
       }
       
       // Decompress if needed
-      let data = item.data
+      let data: T = item.data
       if (item.compressed) {
         try {
-          data = await this.decompressString(JSON.stringify(item.data))
-          data = JSON.parse(data).data
+          const decompressed = await this.decompressString(JSON.stringify(item.data))
+          const parsed = JSON.parse(decompressed)
+          data = parsed.data as T
         } catch (decompressionError) {
           console.error('Decompression failed:', decompressionError)
           this.metrics.errors++
