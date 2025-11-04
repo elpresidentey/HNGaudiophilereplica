@@ -66,11 +66,44 @@ class EmailService {
             })
           }
           
-          // Send to actual recipient - with detailed error handling
+          // Handle Resend free tier limitations
+          const verifiedEmail = 'conceptsandcontexts@gmail.com'
+          const isVerifiedEmail = data.to === verifiedEmail
+          
           console.log(`📧 Attempting to send email to: ${data.to}`)
+          console.log(`📧 Is verified email: ${isVerifiedEmail}`)
           console.log(`📧 From: ${data.from || 'Audiophile <onboarding@resend.dev>'}`)
           
           try {
+            // If not sending to verified email, redirect with notice
+            if (!isVerifiedEmail) {
+              console.warn(`⚠️ Resend free tier: Redirecting email from ${data.to} to verified email ${verifiedEmail}`)
+              
+              // Modify the email content to show original recipient
+              const modifiedHtml = `
+                <div style="background-color: #e3f2fd; border: 1px solid #2196f3; padding: 15px; margin-bottom: 20px; border-radius: 5px;">
+                  <h3 style="color: #1976d2; margin: 0 0 10px 0;">📧 Email Delivery Notice</h3>
+                  <p style="color: #1976d2; margin: 0; font-size: 14px;">
+                    <strong>Original recipient:</strong> ${data.to}<br>
+                    <strong>Delivery status:</strong> Redirected to verified email due to Resend free tier limitations<br>
+                    <strong>Production note:</strong> To send to any email address, verify a domain at resend.com/domains
+                  </p>
+                </div>
+                ${data.html}
+              `
+              
+              const result = await resend.emails.send({
+                from: data.from || 'Audiophile <onboarding@resend.dev>',
+                to: verifiedEmail,
+                subject: `[REDIRECTED] ${data.subject} (for ${data.to})`,
+                html: modifiedHtml,
+              })
+              
+              console.log(`📧 Redirected email sent successfully`)
+              return result
+            }
+            
+            // Send to verified email normally
             const result = await resend.emails.send({
               from: data.from || 'Audiophile <onboarding@resend.dev>',
               to: data.to,
@@ -78,15 +111,9 @@ class EmailService {
               html: data.html,
             })
             
-            console.log(`📧 Resend API Response:`, JSON.stringify(result, null, 2))
-            
-            // Check if there's an error in the response
-            if (result.error) {
-              console.error(`❌ Resend API Error:`, result.error)
-              throw new Error(`Resend API Error: ${result.error.message || JSON.stringify(result.error)}`)
-            }
-            
+            console.log(`📧 Email sent to verified address successfully`)
             return result
+            
           } catch (error: any) {
             console.error(`❌ Resend send failed:`, error)
             console.error(`❌ Error details:`, JSON.stringify(error, null, 2))

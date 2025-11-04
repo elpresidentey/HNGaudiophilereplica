@@ -173,17 +173,18 @@ export async function POST(request: Request) {
     const result = await emailService.sendEmail(emailData)
 
     if (result.success) {
-      const isDevelopment = process.env.NODE_ENV === 'development'
-      const redirectDevEmails = process.env.REDIRECT_DEV_EMAILS === 'true'
       const verifiedEmail = 'conceptsandcontexts@gmail.com'
+      const isVerifiedEmail = email === verifiedEmail
       
       let message = `✅ Confirmation email sent successfully via ${result.provider}`
       let actualRecipient = email
+      let redirected = false
       
-      // Only show redirection message if actually redirecting
-      if (isDevelopment && redirectDevEmails && email !== verifiedEmail) {
-        message += ` (redirected to ${verifiedEmail} in development mode)`
+      // Check if email was redirected due to Resend limitations
+      if (!isVerifiedEmail) {
+        message += ` (redirected to ${verifiedEmail} due to Resend free tier limitations)`
         actualRecipient = verifiedEmail
+        redirected = true
       }
       
       return NextResponse.json({ 
@@ -191,10 +192,11 @@ export async function POST(request: Request) {
         provider: result.provider,
         messageId: result.messageId,
         message,
-        developmentMode: isDevelopment,
-        redirectionActive: redirectDevEmails,
         originalRecipient: email,
-        actualRecipient: actualRecipient
+        actualRecipient: actualRecipient,
+        redirected: redirected,
+        reason: redirected ? 'Resend free tier only allows sending to verified email address' : 'Direct delivery',
+        upgradeNote: redirected ? 'To send to any email address, verify a domain at resend.com/domains' : null
       })
     } else {
       // Email failed but don't block the checkout - log for manual follow-up
