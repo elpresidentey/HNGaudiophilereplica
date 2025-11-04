@@ -35,12 +35,13 @@ class EmailService {
         send: async (data: EmailData) => {
           const resend = new Resend(process.env.RESEND_API_KEY)
           
-          // In development/testing mode, Resend only allows sending to verified email
-          // Check if we're in development and the recipient is not the verified email
+          // Send email to any address in production
+          // In development, we can still redirect for testing if needed
           const isDevelopment = process.env.NODE_ENV === 'development'
           const verifiedEmail = 'conceptsandcontexts@gmail.com'
           
-          if (isDevelopment && data.to !== verifiedEmail) {
+          // Only redirect in development mode for testing purposes
+          if (isDevelopment && data.to !== verifiedEmail && process.env.REDIRECT_DEV_EMAILS === 'true') {
             console.warn(`⚠️ Development mode: Redirecting email from ${data.to} to verified email ${verifiedEmail}`)
             console.log(`📧 Original recipient: ${data.to}`)
             console.log(`📧 Email subject: ${data.subject}`)
@@ -65,6 +66,8 @@ class EmailService {
             })
           }
           
+          // Send to actual recipient (works in production and development)
+          console.log(`📧 Sending email to: ${data.to}`)
           return await resend.emails.send({
             from: data.from || 'Audiophile <onboarding@resend.dev>',
             to: data.to,
@@ -112,10 +115,11 @@ class EmailService {
         const result = await provider.send(data)
         
         console.log(`✅ Email sent successfully via ${provider.name}`)
+        console.log('📧 Email result:', result)
         return {
           success: true,
           provider: provider.name,
-          messageId: result.data?.id || result.id || 'unknown'
+          messageId: result.data?.id || result.id || result.messageId || 'sent-successfully'
         }
       } catch (error: any) {
         const errorMsg = `${provider.name}: ${error.message}`

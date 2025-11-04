@@ -174,12 +174,16 @@ export async function POST(request: Request) {
 
     if (result.success) {
       const isDevelopment = process.env.NODE_ENV === 'development'
+      const redirectDevEmails = process.env.REDIRECT_DEV_EMAILS === 'true'
       const verifiedEmail = 'conceptsandcontexts@gmail.com'
       
       let message = `✅ Confirmation email sent successfully via ${result.provider}`
+      let actualRecipient = email
       
-      if (isDevelopment && email !== verifiedEmail) {
+      // Only show redirection message if actually redirecting
+      if (isDevelopment && redirectDevEmails && email !== verifiedEmail) {
         message += ` (redirected to ${verifiedEmail} in development mode)`
+        actualRecipient = verifiedEmail
       }
       
       return NextResponse.json({ 
@@ -188,8 +192,9 @@ export async function POST(request: Request) {
         messageId: result.messageId,
         message,
         developmentMode: isDevelopment,
+        redirectionActive: redirectDevEmails,
         originalRecipient: email,
-        actualRecipient: isDevelopment && email !== verifiedEmail ? verifiedEmail : email
+        actualRecipient: actualRecipient
       })
     } else {
       // Email failed but don't block the checkout - log for manual follow-up
