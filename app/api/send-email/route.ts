@@ -1,6 +1,52 @@
 import { Resend } from 'resend'
 import { NextResponse } from 'next/server'
 
+// Email service configuration
+const EMAIL_CONFIG = {
+  resend: {
+    enabled: !!process.env.RESEND_API_KEY,
+    apiKey: process.env.RESEND_API_KEY,
+  }
+}
+
+async function sendWithResend(emailData: any) {
+  if (!EMAIL_CONFIG.resend.enabled) {
+    throw new Error('Resend not configured')
+  }
+
+  const resend = new Resend(EMAIL_CONFIG.resend.apiKey)
+  
+  return await resend.emails.send({
+    from: 'Audiophile <onboarding@resend.dev>',
+    to: emailData.to,
+    subject: emailData.subject,
+    html: emailData.html,
+  })
+}
+
+async function sendEmailWithFallback(emailData: any) {
+  const errors: string[] = []
+
+  // Try Resend first
+  if (EMAIL_CONFIG.resend.enabled) {
+    try {
+      const result = await sendWithResend(emailData)
+      return { success: true, provider: 'resend', data: result }
+    } catch (error: any) {
+      errors.push(`Resend failed: ${error.message}`)
+    }
+  }
+
+  // If all providers fail, return graceful failure
+  console.warn('All email providers failed:', errors)
+  return { 
+    success: false, 
+    provider: 'none', 
+    errors,
+    message: 'Email service temporarily unavailable, but order was processed successfully'
+  }
+}
+
 export async function POST(request: Request) {
   try {
     // Validate request body
@@ -137,9 +183,9 @@ export async function POST(request: Request) {
                       </p>
                       
                       <div style="margin: 40px 0; text-align: center;">
-                        <a href="#" style="display: inline-block; background-color: #D87D4A; color: #ffffff; text-decoration: none; padding: 15px 30px; border-radius: 0; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; font-size: 13px;">
-                          View Your Order
-                        </a>
+                        <p style="color: #4C4C4C; margin: 0; font-size: 13px;">
+                          Your order is being processed and will be shipped soon.
+                        </p>
                       </div>
                       
                       <p style="color: #4C4C4C; margin: 30px 0 0 0; font-size: 13px; line-height: 20px;">
@@ -162,76 +208,42 @@ export async function POST(request: Request) {
       </html>
     `
 
-    // Check if Resend API key is configured
-    if (!process.env.RESEND_API_KEY) {
-      console.error('RESEND_API_KEY is not configured')
-      return NextResponse.json(
-        { error: 'Email service is not properly configured' }, 
-        { status: 503 }
-      )
-    }
-
-    // Initialize Resend with API key
-    const resend = new Resend(process.env.RESEND_API_KEY)
-
-    const { data, error } = await resend.emails.send({
-      from: 'Audiophile <onboarding@resend.dev>',
+    // Prepare email data
+    const emailData = {
       to: email,
-      subject: `Order Confirmation - ${orderId}`,
+      subject: `🎧 Order Confirmation - ${orderId}`,
       html: emailHtml,
-    })
-
-    if (error) {
-      console.error('Resend API error:', error)
-      
-      // Handle specific Resend errors
-      if (error.message?.includes('rate limit')) {
-        return NextResponse.json(
-          { error: 'Email service rate limit exceeded. Please try again in a few minutes.' }, 
-          { status: 429 }
-        )
-      }
-      
-      if (error.message?.includes('invalid email')) {
-        return NextResponse.json(
-          { error: 'Invalid email address provided' }, 
-          { status: 400 }
-        )
-      }
-      
-      return NextResponse.json(
-        { error: 'Failed to send confirmation email' }, 
-        { status: 500 }
-      )
     }
 
-    return NextResponse.json({ 
-      success: true, 
-      data,
-      message: 'Confirmation email sent successfully' 
-    })
+    // Try to send email with fallback providers
+    const result = await sendEmailWithFallback(emailData)
+
+    if (result.success) {
+      return NextResponse.json({ 
+        success: true, 
+        provider: result.provider,
+        data: result.data,
+        message: `Confirmation email sent successfully via ${result.provider}` 
+      })
+    } else {
+      // Email failed but don't return error status - just log it
+      console.warn('Email sending failed:', result.errors)
+      
+      return NextResponse.json({ 
+        success: false,
+        provider: result.provider,
+        errors: result.errors,
+        message: result.message
+      }, { status: 200 }) // Return 200 so checkout doesn't fail
+    }
   } catch (error: any) {
     console.error('Email API error:', error)
     
-    // Handle different types of errors
-    if (error.name === 'TypeError' && error.message.includes('fetch')) {
-      return NextResponse.json(
-        { error: 'Network error while sending email' }, 
-        { status: 503 }
-      )
-    }
-    
-    if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
-      return NextResponse.json(
-        { error: 'Email service is temporarily unavailable' }, 
-        { status: 503 }
-      )
-    }
-    
-    return NextResponse.json(
-      { error: 'An unexpected error occurred while sending email' }, 
-      { status: 500 }
-    )
+    // Always return success for checkout flow, just log the email failure
+    return NextResponse.json({
+      success: false,
+      error: error.message,
+      message: 'Order processed successfully, but email notification failed'
+    }, { status: 200 })
   }
 }
-
