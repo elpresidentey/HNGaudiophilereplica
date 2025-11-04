@@ -98,30 +98,35 @@ export async function POST(request: Request) {
         details: 'Resend client initialized'
       })
 
-      // Step 4: Send test email
-      const emailResult = await resend.emails.send({
-        from: 'Audiophile Test <onboarding@resend.dev>',
+      // Step 4: Send test email using the email service
+      const { emailService } = await import('@/lib/emailService')
+      
+      const emailResult = await emailService.sendEmail({
         to: testEmail,
         subject: 'Test Email - ' + new Date().toLocaleString(),
         html: `
           <h1>Test Email Successful!</h1>
           <p>This is a test email sent at ${new Date().toLocaleString()}</p>
           <p>Your email system is working correctly.</p>
+          <p><strong>Original recipient:</strong> ${testEmail}</p>
         `
       })
 
       testResult.steps.push({
         step: 4,
         name: 'Email Send',
-        success: !emailResult.error,
-        details: emailResult.error ? emailResult.error.message : `Email sent with ID: ${emailResult.data?.id}`
+        success: emailResult.success,
+        details: emailResult.success ? 
+          `Email sent via ${emailResult.provider} with ID: ${emailResult.messageId}` : 
+          emailResult.error
       })
 
       return NextResponse.json({
         ...testResult,
-        success: !emailResult.error,
-        emailId: emailResult.data?.id,
-        error: emailResult.error?.message
+        success: emailResult.success,
+        emailId: emailResult.messageId,
+        provider: emailResult.provider,
+        error: emailResult.error
       })
 
     } catch (importError: any) {

@@ -34,6 +34,37 @@ class EmailService {
         enabled: true,
         send: async (data: EmailData) => {
           const resend = new Resend(process.env.RESEND_API_KEY)
+          
+          // In development/testing mode, Resend only allows sending to verified email
+          // Check if we're in development and the recipient is not the verified email
+          const isDevelopment = process.env.NODE_ENV === 'development'
+          const verifiedEmail = 'conceptsandcontexts@gmail.com'
+          
+          if (isDevelopment && data.to !== verifiedEmail) {
+            console.warn(`⚠️ Development mode: Redirecting email from ${data.to} to verified email ${verifiedEmail}`)
+            console.log(`📧 Original recipient: ${data.to}`)
+            console.log(`📧 Email subject: ${data.subject}`)
+            
+            // Modify the email content to show original recipient
+            const modifiedHtml = `
+              <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; margin-bottom: 20px; border-radius: 5px;">
+                <h3 style="color: #856404; margin: 0 0 10px 0;">🚧 Development Mode Notice</h3>
+                <p style="color: #856404; margin: 0; font-size: 14px;">
+                  This email was originally intended for: <strong>${data.to}</strong><br>
+                  In production, it will be sent to the actual customer email.
+                </p>
+              </div>
+              ${data.html}
+            `
+            
+            return await resend.emails.send({
+              from: data.from || 'Audiophile <onboarding@resend.dev>',
+              to: verifiedEmail,
+              subject: `[DEV] ${data.subject} (for ${data.to})`,
+              html: modifiedHtml,
+            })
+          }
+          
           return await resend.emails.send({
             from: data.from || 'Audiophile <onboarding@resend.dev>',
             to: data.to,

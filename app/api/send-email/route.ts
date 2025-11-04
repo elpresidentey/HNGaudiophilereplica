@@ -173,11 +173,23 @@ export async function POST(request: Request) {
     const result = await emailService.sendEmail(emailData)
 
     if (result.success) {
+      const isDevelopment = process.env.NODE_ENV === 'development'
+      const verifiedEmail = 'conceptsandcontexts@gmail.com'
+      
+      let message = `✅ Confirmation email sent successfully via ${result.provider}`
+      
+      if (isDevelopment && email !== verifiedEmail) {
+        message += ` (redirected to ${verifiedEmail} in development mode)`
+      }
+      
       return NextResponse.json({ 
         success: true, 
         provider: result.provider,
         messageId: result.messageId,
-        message: `✅ Confirmation email sent successfully via ${result.provider}` 
+        message,
+        developmentMode: isDevelopment,
+        originalRecipient: email,
+        actualRecipient: isDevelopment && email !== verifiedEmail ? verifiedEmail : email
       })
     } else {
       // Email failed but don't block the checkout - log for manual follow-up
