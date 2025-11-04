@@ -35,51 +35,43 @@ class EmailService {
         send: async (data: EmailData) => {
           const resend = new Resend(process.env.RESEND_API_KEY)
           
-          // Send email to any address in production
-          // In development, we can still redirect for testing if needed
+          // Handle Resend free tier limitations - only verified email allowed
+          const verifiedEmail = 'conceptsandcontexts@gmail.com'
           const isDevelopment = process.env.NODE_ENV === 'development'
-          const verifiedEmail = 'conceptsandcontexts@gmail.com'
-          
-          // Only redirect in development mode for testing purposes
-          if (isDevelopment && data.to !== verifiedEmail && process.env.REDIRECT_DEV_EMAILS === 'true') {
-            console.warn(`⚠️ Development mode: Redirecting email from ${data.to} to verified email ${verifiedEmail}`)
-            console.log(`📧 Original recipient: ${data.to}`)
-            console.log(`📧 Email subject: ${data.subject}`)
-            
-            // Modify the email content to show original recipient
-            const modifiedHtml = `
-              <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; margin-bottom: 20px; border-radius: 5px;">
-                <h3 style="color: #856404; margin: 0 0 10px 0;">🚧 Development Mode Notice</h3>
-                <p style="color: #856404; margin: 0; font-size: 14px;">
-                  This email was originally intended for: <strong>${data.to}</strong><br>
-                  In production, it will be sent to the actual customer email.
-                </p>
-              </div>
-              ${data.html}
-            `
-            
-            return await resend.emails.send({
-              from: data.from || 'Audiophile <onboarding@resend.dev>',
-              to: verifiedEmail,
-              subject: `[DEV] ${data.subject} (for ${data.to})`,
-              html: modifiedHtml,
-            })
-          }
-          
-          // Handle Resend free tier limitations
-          const verifiedEmail = 'conceptsandcontexts@gmail.com'
           const isVerifiedEmail = data.to === verifiedEmail
           
           console.log(`📧 Attempting to send email to: ${data.to}`)
           console.log(`📧 Is verified email: ${isVerifiedEmail}`)
-          console.log(`📧 From: ${data.from || 'Audiophile <onboarding@resend.dev>'}`)
+          console.log(`📧 Environment: ${isDevelopment ? 'development' : 'production'}`)
           
           try {
-            // If not sending to verified email, redirect with notice
+            // Check if we should redirect for development testing
+            if (isDevelopment && data.to !== verifiedEmail && process.env.REDIRECT_DEV_EMAILS === 'true') {
+              console.warn(`⚠️ Development mode: Redirecting email from ${data.to} to verified email ${verifiedEmail}`)
+              
+              const modifiedHtml = `
+                <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; margin-bottom: 20px; border-radius: 5px;">
+                  <h3 style="color: #856404; margin: 0 0 10px 0;">🚧 Development Mode Notice</h3>
+                  <p style="color: #856404; margin: 0; font-size: 14px;">
+                    This email was originally intended for: <strong>${data.to}</strong><br>
+                    In production, it will be sent to the actual customer email.
+                  </p>
+                </div>
+                ${data.html}
+              `
+              
+              return await resend.emails.send({
+                from: data.from || 'Audiophile <onboarding@resend.dev>',
+                to: verifiedEmail,
+                subject: `[DEV] ${data.subject} (for ${data.to})`,
+                html: modifiedHtml,
+              })
+            }
+            
+            // Handle Resend free tier limitation - redirect non-verified emails
             if (!isVerifiedEmail) {
               console.warn(`⚠️ Resend free tier: Redirecting email from ${data.to} to verified email ${verifiedEmail}`)
               
-              // Modify the email content to show original recipient
               const modifiedHtml = `
                 <div style="background-color: #e3f2fd; border: 1px solid #2196f3; padding: 15px; margin-bottom: 20px; border-radius: 5px;">
                   <h3 style="color: #1976d2; margin: 0 0 10px 0;">📧 Email Delivery Notice</h3>
