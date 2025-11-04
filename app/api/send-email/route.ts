@@ -180,27 +180,27 @@ export async function POST(request: Request) {
         message: `✅ Confirmation email sent successfully via ${result.provider}` 
       })
     } else {
-      // Email is CRITICAL - return error status to alert the system
+      // Email failed but don't block the checkout - log for manual follow-up
       console.error('🚨 CRITICAL: Email sending failed completely:', result.error)
       
       return NextResponse.json({ 
         success: false,
         provider: result.provider,
         error: result.error,
-        message: '🚨 CRITICAL: Email delivery failed - manual follow-up required',
+        message: 'Email delivery failed - manual follow-up required',
         requiresManualFollowup: true
-      }, { status: 500 }) // Return error status since emails are critical
+      }, { status: 200 }) // Return 200 so checkout doesn't fail
     }
   } catch (error: any) {
     console.error('🚨 CRITICAL EMAIL API ERROR:', error)
     
-    // Since emails are critical, return error status
+    // Log error but don't block checkout
     return NextResponse.json({
       success: false,
       error: error.message,
-      message: '🚨 CRITICAL: Email system failure - immediate attention required',
+      message: 'Email system failure - order processed successfully',
       requiresManualFollowup: true,
       timestamp: new Date().toISOString()
-    }, { status: 500 })
+    }, { status: 200 }) // Return 200 so checkout completes
   }
 }

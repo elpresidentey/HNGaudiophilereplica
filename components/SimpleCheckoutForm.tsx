@@ -92,13 +92,30 @@ export default function SimpleCheckoutForm() {
 
           const emailResult = await emailResponse.json()
 
-          if (emailResponse.ok && emailResult.success) {
-            emailSent = true
-            console.log(`✅ Email sent successfully via ${emailResult.provider}`)
-            break
+          if (emailResponse.ok) {
+            if (emailResult.success) {
+              emailSent = true
+              console.log(`✅ Email sent successfully via ${emailResult.provider}`)
+              break
+            } else {
+              // Email API returned success response but email failed
+              emailError = emailResult.message || 'Email sending failed'
+              console.warn(`❌ Email attempt ${emailAttempts} failed:`, emailError)
+              
+              // Don't retry if it's a configuration issue
+              if (emailResult.requiresManualFollowup) {
+                console.warn('Email requires manual follow-up, stopping retries')
+                break
+              }
+              
+              // Wait before retry (except on last attempt)
+              if (emailAttempts < maxEmailAttempts) {
+                await new Promise(resolve => setTimeout(resolve, 1000))
+              }
+            }
           } else {
-            emailError = emailResult.message || 'Email sending failed'
-            console.warn(`❌ Email attempt ${emailAttempts} failed:`, emailError)
+            emailError = emailResult?.message || 'Email API error'
+            console.warn(`❌ Email attempt ${emailAttempts} API error:`, emailError)
             
             // Wait before retry (except on last attempt)
             if (emailAttempts < maxEmailAttempts) {
