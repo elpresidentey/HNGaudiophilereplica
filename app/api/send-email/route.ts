@@ -1,51 +1,5 @@
-import { Resend } from 'resend'
 import { NextResponse } from 'next/server'
-
-// Email service configuration
-const EMAIL_CONFIG = {
-  resend: {
-    enabled: !!process.env.RESEND_API_KEY,
-    apiKey: process.env.RESEND_API_KEY,
-  }
-}
-
-async function sendWithResend(emailData: any) {
-  if (!EMAIL_CONFIG.resend.enabled) {
-    throw new Error('Resend not configured')
-  }
-
-  const resend = new Resend(EMAIL_CONFIG.resend.apiKey)
-  
-  return await resend.emails.send({
-    from: 'Audiophile <onboarding@resend.dev>',
-    to: emailData.to,
-    subject: emailData.subject,
-    html: emailData.html,
-  })
-}
-
-async function sendEmailWithFallback(emailData: any) {
-  const errors: string[] = []
-
-  // Try Resend first
-  if (EMAIL_CONFIG.resend.enabled) {
-    try {
-      const result = await sendWithResend(emailData)
-      return { success: true, provider: 'resend', data: result }
-    } catch (error: any) {
-      errors.push(`Resend failed: ${error.message}`)
-    }
-  }
-
-  // If all providers fail, return graceful failure
-  console.warn('All email providers failed:', errors)
-  return { 
-    success: false, 
-    provider: 'none', 
-    errors,
-    message: 'Email service temporarily unavailable, but order was processed successfully'
-  }
-}
+import { emailService } from '@/lib/emailService'
 
 export async function POST(request: Request) {
   try {
@@ -215,35 +169,38 @@ export async function POST(request: Request) {
       html: emailHtml,
     }
 
-    // Try to send email with fallback providers
-    const result = await sendEmailWithFallback(emailData)
+    // Try to send email with robust fallback system
+    const result = await emailService.sendEmail(emailData)
 
     if (result.success) {
       return NextResponse.json({ 
         success: true, 
         provider: result.provider,
-        data: result.data,
-        message: `Confirmation email sent successfully via ${result.provider}` 
+        messageId: result.messageId,
+        message: `✅ Confirmation email sent successfully via ${result.provider}` 
       })
     } else {
-      // Email failed but don't return error status - just log it
-      console.warn('Email sending failed:', result.errors)
+      // Email is CRITICAL - return error status to alert the system
+      console.error('🚨 CRITICAL: Email sending failed completely:', result.error)
       
       return NextResponse.json({ 
         success: false,
         provider: result.provider,
-        errors: result.errors,
-        message: result.message
-      }, { status: 200 }) // Return 200 so checkout doesn't fail
+        error: result.error,
+        message: '🚨 CRITICAL: Email delivery failed - manual follow-up required',
+        requiresManualFollowup: true
+      }, { status: 500 }) // Return error status since emails are critical
     }
   } catch (error: any) {
-    console.error('Email API error:', error)
+    console.error('🚨 CRITICAL EMAIL API ERROR:', error)
     
-    // Always return success for checkout flow, just log the email failure
+    // Since emails are critical, return error status
     return NextResponse.json({
       success: false,
       error: error.message,
-      message: 'Order processed successfully, but email notification failed'
-    }, { status: 200 })
+      message: '🚨 CRITICAL: Email system failure - immediate attention required',
+      requiresManualFollowup: true,
+      timestamp: new Date().toISOString()
+    }, { status: 500 })
   }
 }

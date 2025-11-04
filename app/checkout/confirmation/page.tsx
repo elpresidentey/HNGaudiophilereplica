@@ -161,11 +161,38 @@ function ConfirmationContent() {
                       </span>
                     </div>
                     <div className="flex items-center text-sm">
-                      <div className={`w-2 h-2 rounded-full mr-3 ${orderData.emailSent ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
-                      <span className={orderData.emailSent ? 'text-green-700' : 'text-yellow-700'}>
-                        {orderData.emailSent ? 'Confirmation email sent' : 'Confirmation email pending'}
+                      <div className={`w-2 h-2 rounded-full mr-3 ${
+                        orderData.emailSent ? 'bg-green-500' : 
+                        orderData.requiresManualFollowup ? 'bg-red-500' : 'bg-yellow-500'
+                      }`}></div>
+                      <span className={
+                        orderData.emailSent ? 'text-green-700' : 
+                        orderData.requiresManualFollowup ? 'text-red-700' : 'text-yellow-700'
+                      }>
+                        {orderData.emailSent 
+                          ? 'Confirmation email sent successfully' 
+                          : orderData.requiresManualFollowup 
+                            ? '⚠️ Email delivery failed - we will contact you directly'
+                            : 'Confirmation email pending'
+                        }
                       </span>
                     </div>
+                    
+                    {/* Show email failure details if needed */}
+                    {orderData.requiresManualFollowup && (
+                      <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                        <p className="text-sm text-red-800">
+                          <strong>Important:</strong> We encountered an issue sending your confirmation email. 
+                          Our team has been notified and will contact you directly at <strong>{orderData.email}</strong> 
+                          within 24 hours with your order details.
+                        </p>
+                        {orderData.emailAttempts && (
+                          <p className="text-xs text-red-600 mt-1">
+                            Attempted {orderData.emailAttempts} times. Error: {orderData.emailError}
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

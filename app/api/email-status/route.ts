@@ -1,24 +1,21 @@
 import { NextResponse } from 'next/server'
+import { emailService } from '@/lib/emailService'
 
 export async function GET() {
-  const hasResendKey = !!process.env.RESEND_API_KEY
+  const status = emailService.getStatus()
   
-  const status = {
-    configured: hasResendKey,
-    providers: {
-      resend: {
-        enabled: hasResendKey,
-        status: hasResendKey ? 'ready' : 'missing API key'
-      }
-    },
-    message: hasResendKey 
+  const response = {
+    ...status,
+    message: status.configured 
       ? '✅ Email service is fully configured and ready' 
-      : '⚠️ Email service not configured - orders will still work perfectly',
-    instructions: hasResendKey 
+      : '🚨 CRITICAL: No email providers configured - customer notifications will fail!',
+    severity: status.configured ? 'success' : 'critical',
+    instructions: status.configured 
       ? 'Email notifications are working!' 
-      : 'Add RESEND_API_KEY environment variable to enable email notifications',
-    testUrl: '/test-email'
+      : 'URGENT: Add RESEND_API_KEY environment variable immediately',
+    testUrl: '/test-email',
+    setupGuide: '/RESEND_SETUP_GUIDE.md'
   }
   
-  return NextResponse.json(status)
+  return NextResponse.json(response)
 }

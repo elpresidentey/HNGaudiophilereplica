@@ -60,35 +60,66 @@ export default function SimpleCheckoutForm() {
       // Generate order ID
       const orderId = `ORD-${Date.now()}-${Math.random().toString(36).substring(2, 9).toUpperCase()}`
 
-      // Try to send email (but don't fail the order if it doesn't work)
+      // Email is CRITICAL - try multiple times with proper error handling
       let emailSent = false
-      try {
-        const emailResponse = await fetch('/api/send-email', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email: data.email,
-            name: data.name,
-            orderId,
-            items: cart,
-            total,
-            shipping,
-            subtotal,
-            tax,
-            address: data.address,
-            city: data.city,
-            country: data.country,
-            zipCode: data.zipCode,
-          }),
-        })
+      let emailError = null
+      let emailAttempts = 0
+      const maxEmailAttempts = 3
 
-        if (emailResponse.ok) {
-          emailSent = true
-        } else {
-          console.warn('Email sending failed, but order will continue')
+      while (!emailSent && emailAttempts < maxEmailAttempts) {
+        emailAttempts++
+        try {
+          console.log(`📧 Email attempt ${emailAttempts}/${maxEmailAttempts}...`)
+          
+          const emailResponse = await fetch('/api/send-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: data.email,
+              name: data.name,
+              orderId,
+              items: cart,
+              total,
+              shipping,
+              subtotal,
+              tax,
+              address: data.address,
+              city: data.city,
+              country: data.country,
+              zipCode: data.zipCode,
+            }),
+          })
+
+          const emailResult = await emailResponse.json()
+
+          if (emailResponse.ok && emailResult.success) {
+            emailSent = true
+            console.log(`✅ Email sent successfully via ${emailResult.provider}`)
+            break
+          } else {
+            emailError = emailResult.message || 'Email sending failed'
+            console.warn(`❌ Email attempt ${emailAttempts} failed:`, emailError)
+            
+            // Wait before retry (except on last attempt)
+            if (emailAttempts < maxEmailAttempts) {
+              await new Promise(resolve => setTimeout(resolve, 1000))
+            }
+          }
+        } catch (error: any) {
+          emailError = error.message
+          console.warn(`❌ Email attempt ${emailAttempts} error:`, error)
+          
+          // Wait before retry (except on last attempt)
+          if (emailAttempts < maxEmailAttempts) {
+            await new Promise(resolve => setTimeout(resolve, 1000))
+          }
         }
-      } catch (emailError) {
-        console.warn('Email service unavailable, but order will continue:', emailError)
+      }
+
+      // If email failed after all attempts, this is critical
+      if (!emailSent) {
+        console.error('🚨 CRITICAL: Email failed after all attempts:', emailError)
+        // Still continue with order but flag for manual follow-up
       }
 
       // Store order data
@@ -108,6 +139,9 @@ export default function SimpleCheckoutForm() {
         zipCode: data.zipCode,
         paymentMethod: data.paymentMethod,
         emailSent,
+        emailAttempts,
+        emailError: emailSent ? null : emailError,
+        requiresManualFollowup: !emailSent,
         orderSaved: true,
         timestamp: Date.now(),
       }
