@@ -98,19 +98,81 @@ export async function POST(request: Request) {
         details: 'Resend client initialized'
       })
 
-      // Step 4: Send test email using the email service
-      const { emailService } = await import('@/lib/emailService')
+      // Step 4: Send test email directly with Resend to see actual response
+      console.log(`🧪 Testing email to: ${testEmail}`)
       
-      const emailResult = await emailService.sendEmail({
-        to: testEmail,
-        subject: 'Test Email - ' + new Date().toLocaleString(),
-        html: `
-          <h1>Test Email Successful!</h1>
-          <p>This is a test email sent at ${new Date().toLocaleString()}</p>
-          <p>Your email system is working correctly.</p>
-          <p><strong>Original recipient:</strong> ${testEmail}</p>
-        `
-      })
+      try {
+        const directResult = await resend.emails.send({
+          from: 'Audiophile Test <onboarding@resend.dev>',
+          to: testEmail,
+          subject: 'Direct Test Email - ' + new Date().toLocaleString(),
+          html: `
+            <h1>Direct Test Email!</h1>
+            <p>This is a direct test email sent at ${new Date().toLocaleString()}</p>
+            <p><strong>Recipient:</strong> ${testEmail}</p>
+            <p>If you receive this, the email system is working correctly.</p>
+          `
+        })
+        
+        console.log(`🧪 Direct Resend Response:`, JSON.stringify(directResult, null, 2))
+        
+        testResult.steps.push({
+          step: 4,
+          name: 'Direct Email Send',
+          success: !directResult.error,
+          details: directResult.error ? 
+            `Resend Error: ${directResult.error.message || JSON.stringify(directResult.error)}` :
+            `Email sent with ID: ${directResult.data?.id || 'unknown'}`
+        })
+        
+        // Also test with email service
+        const { emailService } = await import('@/lib/emailService')
+        const serviceResult = await emailService.sendEmail({
+          to: testEmail,
+          subject: 'Service Test Email - ' + new Date().toLocaleString(),
+          html: `
+            <h1>Service Test Email!</h1>
+            <p>This is a service test email sent at ${new Date().toLocaleString()}</p>
+            <p><strong>Recipient:</strong> ${testEmail}</p>
+          `
+        })
+        
+        testResult.steps.push({
+          step: 5,
+          name: 'Email Service Send',
+          success: serviceResult.success,
+          details: serviceResult.success ? 
+            `Service sent via ${serviceResult.provider} with ID: ${serviceResult.messageId}` : 
+            `Service error: ${serviceResult.error}`
+        })
+
+        return NextResponse.json({
+          ...testResult,
+          success: !directResult.error && serviceResult.success,
+          directResult: {
+            success: !directResult.error,
+            emailId: directResult.data?.id,
+            error: directResult.error
+          },
+          serviceResult: serviceResult
+        })
+        
+      } catch (directError: any) {
+        console.error(`🧪 Direct send failed:`, directError)
+        
+        testResult.steps.push({
+          step: 4,
+          name: 'Direct Email Send',
+          success: false,
+          details: `Direct send failed: ${directError.message}`
+        })
+        
+        return NextResponse.json({
+          ...testResult,
+          success: false,
+          error: directError.message
+        })
+      }
 
       testResult.steps.push({
         step: 4,

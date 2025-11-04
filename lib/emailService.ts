@@ -66,14 +66,32 @@ class EmailService {
             })
           }
           
-          // Send to actual recipient (works in production and development)
-          console.log(`📧 Sending email to: ${data.to}`)
-          return await resend.emails.send({
-            from: data.from || 'Audiophile <onboarding@resend.dev>',
-            to: data.to,
-            subject: data.subject,
-            html: data.html,
-          })
+          // Send to actual recipient - with detailed error handling
+          console.log(`📧 Attempting to send email to: ${data.to}`)
+          console.log(`📧 From: ${data.from || 'Audiophile <onboarding@resend.dev>'}`)
+          
+          try {
+            const result = await resend.emails.send({
+              from: data.from || 'Audiophile <onboarding@resend.dev>',
+              to: data.to,
+              subject: data.subject,
+              html: data.html,
+            })
+            
+            console.log(`📧 Resend API Response:`, JSON.stringify(result, null, 2))
+            
+            // Check if there's an error in the response
+            if (result.error) {
+              console.error(`❌ Resend API Error:`, result.error)
+              throw new Error(`Resend API Error: ${result.error.message || JSON.stringify(result.error)}`)
+            }
+            
+            return result
+          } catch (error: any) {
+            console.error(`❌ Resend send failed:`, error)
+            console.error(`❌ Error details:`, JSON.stringify(error, null, 2))
+            throw error
+          }
         }
       })
     }
